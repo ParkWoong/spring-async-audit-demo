@@ -9,6 +9,7 @@
 ```text
 pom.xml
 src/main/java/io/github/parkwoong/demo/DemoApplication.java
+src/main/java/io/github/parkwoong/demo/AuditController.java
 src/main/java/io/github/parkwoong/demo/config/AsyncConfig.java
 src/main/java/io/github/parkwoong/demo/infra/entity/RequestLog.java
 src/main/java/io/github/parkwoong/demo/infra/mapper/ApiRequestLogMapper.java
@@ -26,6 +27,8 @@ src/test/java/io/github/parkwoong/demo/LogServiceTest.java
 
 The service stores the header/body strings passed to it. Use sanitized sample data. Exceptions are printed inside the asynchronous method. `LogUtils` uses a shared `SimpleDateFormat` and a 0–99 suffix, so it is not a thread-safe unique-ID generator.
 
+AuditController submits a sample audit request to LogService and reads the H2 row count.
+
 ### Run and test
 
 Use JDK 8 and Maven 3.6.3+. Set JAVA_HOME to your JDK 8 directory, then run from the repository root:
@@ -39,7 +42,11 @@ mvn spring-boot:run
 
 `LogServiceTest` calls the asynchronous bean and waits for the row to appear in H2.
 
-The app starts without an HTTP server and exits. The test class shows the actual method calls and results. Database examples use H2 and need no external server.
+The app listens on localhost:8080. The original unit tests still check the underlying methods.
+
+#### Postman API
+
+Send POST http://localhost:8080/api/audit with Content-Type: application/json and body {"userId":"sample","clientId":"sample-client","requestUri":"/sample","responseCode":"200"}. Expected: HTTP 202, {"status":"accepted"}. Then call GET http://localhost:8080/api/audit/count. Expected: HTTP 200, {"count":1} after the asynchronous insert finishes. H2 data resets when the app stops.
 
 ## KR
 
@@ -48,6 +55,7 @@ The app starts without an HTTP server and exits. The test class shows the actual
 ```text
 pom.xml
 src/main/java/io/github/parkwoong/demo/DemoApplication.java
+src/main/java/io/github/parkwoong/demo/AuditController.java
 src/main/java/io/github/parkwoong/demo/config/AsyncConfig.java
 src/main/java/io/github/parkwoong/demo/infra/entity/RequestLog.java
 src/main/java/io/github/parkwoong/demo/infra/mapper/ApiRequestLogMapper.java
@@ -65,6 +73,8 @@ src/test/java/io/github/parkwoong/demo/LogServiceTest.java
 
 전달받은 헤더·본문 문자열을 저장하므로 정제된 샘플 데이터를 사용하세요. 예외는 비동기 메서드 내부에서 출력합니다. `LogUtils`는 공유 `SimpleDateFormat`과 0~99 접미사를 사용하므로 스레드 안전한 고유 ID 생성기가 아닙니다.
 
+AuditController는 샘플 기록을 LogService에 전달하고 H2의 저장 건수를 조회합니다.
+
 ### 실행과 테스트
 
 JDK 8과 Maven 3.6.3 이상을 사용합니다. JAVA_HOME을 JDK 8 경로로 설정하고 저장소 루트에서 실행하세요:
@@ -78,4 +88,8 @@ mvn spring-boot:run
 
 `LogServiceTest`는 비동기 빈을 호출하고 H2에 저장되는 결과를 확인합니다.
 
-앱은 HTTP 서버 없이 시작 후 종료합니다. 실제 메서드 호출과 결과는 테스트 클래스에서 확인합니다. DB 예제는 H2를 사용하며 외부 서버는 필요하지 않습니다.
+앱은 localhost:8080에서 실행됩니다. 기존 단위 테스트는 내부 메서드를 계속 확인합니다.
+
+#### Postman API
+
+Content-Type: application/json으로 POST http://localhost:8080/api/audit에 {"userId":"sample","clientId":"sample-client","requestUri":"/sample","responseCode":"200"}을 보내세요. 예상 결과: HTTP 202, {"status":"accepted"}. 이어서 GET http://localhost:8080/api/audit/count를 호출하면 비동기 저장 후 HTTP 200, {"count":1}이 됩니다. 앱 종료 시 H2 데이터는 사라집니다.
